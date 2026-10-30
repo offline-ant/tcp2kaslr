@@ -135,8 +135,19 @@ Freed by task 110:
 ```
 
 The freed object is in `kmalloc-64`, and the read is at offset 28, which is the
-options length field. Full log: `evidence/vuln-6.18.55-stress.log`. Cleaned
-excerpt: `evidence/kasan-excerpt.txt`.
+options length field.
+
+Related evidence:
+
+- `evidence/vuln-6.18.55-kasan.log` - this run, trimmed to the report.
+- `evidence/mptcp-disabled-kasan.log` - the run with `net.mptcp.enabled=0`.
+- `evidence/patched-6.18.55-control.log` - the same harness on a kernel with the
+  fix: no report.
+- `evidence/kasan-excerpt.txt` - the report alone, no surrounding noise.
+
+The logs are trimmed, not rewritten: boot messages and the five-second progress
+lines are removed, and the KASAN lines that the harness echoes from `/dev/kmsg`
+are de-duplicated. Nothing in the reports is edited.
 
 ### 5.2 How often it fires
 

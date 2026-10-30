@@ -1,0 +1,118 @@
+[    0.000000] Linux version 6.18.55 (builder@localhost) (gcc (GCC) 14.2.1 20250405, GNU ld (GNU Binutils) 2.44) #2 SMP PREEMPT_DYNAMIC Fri Oct 30 16:04:01 CET 2026
+[    0.000000] Command line: console=ttyS0 nokaslr panic=-1 
+tun: tun0 up, victim=10.0.0.1 spoofed-client=10.X.0.2
+tun: tun1 up, victim=10.1.0.1 spoofed-client=10.X.0.2
+tun: tun2 up, victim=10.2.0.1 spoofed-client=10.X.0.2
+tun: tun3 up, victim=10.3.0.1 spoofed-client=10.X.0.2
+mptcp: net.mptcp.enabled=0 (disabled)
+CVE-2026-98432 harness: pid=1 cpus=8 target=10.0.0.1:38979 threads=4 max_seconds=600
+server: listening on 10.0.0.1:38979, accept+SO_LINGER(0)+close loop
+attacker3: tun3 send fd=6 sniff fd=10 sport range 26144..28191
+attacker2: tun2 send fd=5 sniff fd=11 sport range 24096..26143
+attacker0: tun0 send fd=3 sniff fd=12 sport range 20000..22047
+attacker1: tun1 send fd=4 sniff fd=13 sport range 22048..24095
+
+... progress lines trimmed ...
+
+ATTEMPTS: 0
+ATTEMPTS: 18479 accepts=14421 elapsed=5s
+...
+ATTEMPTS: 186360 accepts=186186 elapsed=70s
+ATTEMPTS: 189689 accepts=189511 elapsed=75s
+
+[   80.536257] BUG: KASAN: slab-use-after-free in inet_csk_route_req+0x9f9/0xa80
+[   80.539139] Read of size 1 at addr ffff8880083dcb1c by task init/124
+[   80.541592] 
+[   80.543428]  <TASK>
+[   80.543432]  dump_stack_lvl+0x4e/0x70
+[   80.543518]  inet_csk_route_req+0x9f9/0xa80
+[   80.543545]  ? __pfx_get_random_u32+0x10/0x10
+[   80.543565]  tcp_rtx_synack+0x117/0x490
+[   80.543582]  ? __pfx_tcp_rtx_synack+0x10/0x10
+[   80.543592]  ? arch_stack_walk+0xa6/0xf0
+[   80.543607]  ? security_sock_rcv_skb+0x1e/0x40
+[   80.543616]  ? sk_filter_trim_cap+0x42a/0xb00
+[   80.543625]  ? __pfx_tcp_check_req+0x10/0x10
+[   80.543659]  ? raw_local_deliver+0x346/0xa80
+[   80.543685]  ? __pfx_raw_local_deliver+0x10/0x10
+[   80.543704]  ip_protocol_deliver_rcu+0x61/0x2e0
+[   80.543751]  ip_rcv+0x220/0x270
+[   80.543806]  ? __pfx___netif_receive_skb_one_core+0x10/0x10
+[   80.543826]  netif_receive_skb+0x82/0x380
+[   80.543844]  ? __pfx___virtio_net_hdr_to_skb+0x10/0x10
+[   80.543882]  ? __pfx_run_posix_cpu_timers+0x10/0x10
+[   80.543923]  tun_chr_write_iter+0x16e/0x290
+[   80.543949]  ? __pfx_vfs_write+0x10/0x10
+[   80.543974]  ? __pfx_ksys_write+0x10/0x10
+[   80.543983]  do_syscall_64+0xa4/0x300
+[   80.543991]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+[   80.544000] RIP: 0033:0x44b44e
+[   80.544007] Code: 08 0f 85 b5 ec ff ff 49 89 fb 48 89 f0 48 89 d7 48 89 ce 4c 89 c2 4d 89 ca 4c 8b 44 24 08 4c 8b 4c 24 10 4c 89 5c 24 08 0f 05 <c3> 90 41 57 4d 89 c7 41 56 41 55 41 54 4d 89 cc 55 53 48 83 ec 18
+[   80.544015] RSP: 002b:00007fc36c1971c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+[   80.544025] RAX: ffffffffffffffda RBX: 00007fc36c1976c0 RCX: 000000000044b44e
+[   80.544032] RDX: 0000000000000030 RSI: 00000000004c0bf8 RDI: 0000000000000005
+[   80.544037] RBP: 00000000004c0bf4 R08: 0000000000000000 R09: 0000000000000000
+[   80.544042] R10: 0000000000000000 R11: 0000000000000246 R12: 00000000004c0bf8
+[   80.544047] R13: 0000000000000002 R14: 00007ffccca13190 R15: 00007ffccca13278
+[   80.544054]  </TASK>
+[   80.544057] 
+[   80.871724] Allocated by task 120:
+[   80.873064]  kasan_save_stack+0x30/0x50
+[   80.878083]  kasan_save_track+0x14/0x30
+[   80.880158]  __kasan_kmalloc+0x8f/0xa0
+[   80.884525]  __kmalloc_noprof+0x199/0x5b0
+[   80.889601]  tcp_v4_route_req+0x2d0/0x420
+[   80.891309]  tcp_conn_request+0xd1b/0x36f0
+[   80.895907]  tcp_rcv_state_process+0x3cd/0x6460
+[   80.897749]  tcp_v4_do_rcv+0x2a8/0x8d0
+[   80.902552]  tcp_v4_rcv+0x3242/0x3ee0
+[   80.904133]  ip_protocol_deliver_rcu+0x61/0x2e0
+[   80.908828]  ip_local_deliver_finish+0x332/0x4b0
+[   80.910790]  ip_local_deliver+0x18d/0x2d0
+[   80.916234]  ip_rcv+0x220/0x270
+[   80.917533]  __netif_receive_skb_one_core+0x161/0x1b0
+[   80.922946]  netif_receive_skb+0x82/0x380
+[   80.927483]  tun_get_user+0x1a21/0x3b00
+[   80.929118]  tun_chr_write_iter+0x16e/0x290
+[   80.930771]  vfs_write+0x528/0xd30
+[   80.935186]  ksys_write+0xf7/0x1c0
+[   80.940514]  do_syscall_64+0xa4/0x300
+[   80.941989]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+[   80.946963] 
+[   80.947709] Freed by task 117:
+[   80.949007]  kasan_save_stack+0x30/0x50
+[   80.950551]  kasan_save_track+0x14/0x30
+[   80.955126]  __kasan_save_free_info+0x3b/0x70
+[   80.960769]  __kasan_slab_free+0x43/0x70
+[   80.962433]  kfree+0x128/0x430
+[   80.966557]  inet_sock_destruct+0x4f0/0x780
+[   80.968234]  __sk_destruct+0x6f/0x590
+[   80.973625]  inet_release+0xc9/0x1c0
+[   80.975100]  __sock_release+0xa1/0x250
+[   80.978856]  sock_close+0x10/0x20
+[   80.980223]  __fput+0x35f/0xab0
+[   80.983345]  fput_close_sync+0xe0/0x190
+[   80.987705]  __x64_sys_close+0x78/0xd0
+[   80.989263]  do_syscall_64+0xa4/0x300
+[   80.994478]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+[   80.996573] 
+[   80.997249] The buggy address belongs to the object at ffff8880083dcb00
+[   80.997249]  which belongs to the cache kmalloc-64 of size 64
+[   81.007879] The buggy address is located 28 bytes inside of
+[   81.007879]  freed 64-byte region [ffff8880083dcb00, ffff8880083dcb40)
+[   81.019237] 
+[   81.019927] The buggy address belongs to the physical page:
+[   81.022118] page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x83dc
+[   81.028019] anon flags: 0x100000000000000(node=0|zone=1)
+[   81.033943] page_type: f5(slab)
+[   81.035221] raw: 0100000000000000 ffff888006c428c0 ffffea000020a7c0 dead000000000005
+[   81.042206] raw: 0000000000000000 0000000000200020 00000000f5000000 0000000000000000
+[   81.049037] page dumped because: kasan: bad access detected
+[   81.060058] Memory state around the buggy address:
+[   81.076602] >ffff8880083dcb00: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+[   81.079573]                             ^
+[   81.096555] ==================================================================
+RESULT: KASAN_UAF_DETECTED attempts=191431 accep[   82.068761] init (125) used greatest stack depth: 25400 bytes left
+[   82.071944] init (123) used greatest stack depth: 25256 bytes left
+[   82.077980] init (119) used greatest stack depth: 24848 bytes left
+
