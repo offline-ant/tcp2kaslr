@@ -1,13 +1,22 @@
-# CVE-2026-98432: a normal TCP server is vulnerable. MPTCP is not the trigger.
+# CVE-2026-98432
 
-This repo shows one thing. A plain IPv4 TCP server reaches the
-use-after-free in CVE-2026-98432. You do not need MPTCP. Many reports said MPTCP
-was the trigger. That is wrong.
+_Written by DeepSeek. Analysis, experiments and this report by Claude._
 
-We did not take this from a CVSS score or a blog post. We built the kernel from
-the release tarball and made the bug happen.
+**A plain IPv4 TCP server is vulnerable. MPTCP is not the trigger.**
 
-## The short answer
+We built Linux 6.18.55 from the release tarball and made the kernel read freed
+memory on a normal `IPPROTO_TCP` listener. KASAN reported it twice. No MPTCP
+socket was ever created, and one run had MPTCP switched off in the kernel.
+
+The same bug makes the kernel copy bytes out of a freed object into the reply it
+sends back. That is the primitive a KASLR break needs, and we have observed it
+happen in unpublished work. We did **not** build a kernel-address leak, and we
+did **not** prove a write.
+
+What is proven here, with code and logs: the use-after-free is real, stock TCP
+reaches it, and the upstream fix stops it.
+
+## The runs
 
 | Kernel | MPTCP | Attempts | Time | Result |
 |---|---|---:|---:|---|
@@ -15,31 +24,29 @@ the release tarball and made the bug happen.
 | 6.18.55, no fix | switched off | 191,431 | 80 s | **KASAN use-after-free** |
 | 6.18.55 + fix | not used | 439,316 | 411 s | clean |
 
-The listener in every run is a normal `IPPROTO_TCP` socket. No MPTCP socket is
-ever created. In the second run MPTCP is also switched off in the kernel.
+The race is hard to win. Read `ANALYSIS.md` before quoting any rate: our numbers
+are a best case, and the events come in bursts.
 
-The race is hard to win. See `ANALYSIS.md` for the real numbers and for the
-limits of our measurement.
-
-## What the bug is, in plain words
+## The bug in plain words
 
 A TCP server gets a SYN. The SYN carries an IPv4 option (Record Route or
-Timestamp). The kernel saves those options in the request socket.
+Timestamp). The kernel saves those options on the request socket.
 
-Then a second SYN for the same connection arrives. The kernel builds a SYNACK
+A second SYN for the same connection arrives. The kernel builds a SYNACK for it
 and reads the saved options.
 
 At the same time the handshake finishes. The child socket gets **the same
-pointer**, not a copy. The server closes the child. The kernel frees the options
-with plain `kfree()`.
+pointer**, not a copy. The server closes the child, and the kernel frees the
+options with plain `kfree()`.
 
-The SYNACK code is still reading that memory. That is the use-after-free.
+The SYNACK code is still reading that memory. That is the use-after-free. The
+same read is what puts freed bytes into the packet.
 
-## What this PoC is and is not
+## What this repo is not
 
-It is a **bug trigger**. It shows the kernel reads freed memory. KASAN is the
-judge. It is not an exploit. It does not leak addresses, does not write memory
-and does not get root.
+It is a **bug trigger**, not an exploit. It does not leak kernel addresses, does
+not write kernel memory, and does not get root. It shows the kernel reading freed
+memory; KASAN is the judge.
 
 The repo stops there on purpose. Later stages were worked on privately and are
 not published here.
@@ -57,12 +64,10 @@ scripts/run.sh patched 600         # expect nothing
 ```
 
 You need gcc, make, bison, flex, bc and `qemu-system-x86_64`. KVM helps a lot.
-The VM uses 2 GB RAM and 8 vCPUs; the host needs about 16 cores to keep the
-timing realistic.
+The VM takes 2 GB RAM and 8 vCPUs.
 
-**Because the race is rare, one run may show nothing.** That is not evidence that
-the kernel is safe. Run it several times, and read the caveats in `ANALYSIS.md`
-before you quote any rate.
+**One run may show nothing.** That is not evidence of a safe kernel. Run it
+several times, and read the caveats in `ANALYSIS.md`.
 
 ## Check your own kernel
 
@@ -86,8 +91,8 @@ A host is exposed if all three are true:
 2. the peer sends a SYN with IP options, and
 3. the program closes the accepted socket soon.
 
-The attacker controls point 2. So most internet servers are exposed. Saying "we
-do not use MPTCP" does not help.
+The attacker controls point 2. So most internet servers are exposed, and "we do
+not use MPTCP" does not help.
 
 Two notes:
 
@@ -104,7 +109,7 @@ Two notes:
 | `harness/` | the bug trigger that runs as `/init` in QEMU |
 | `patches/` | the upstream fix, used for the control build |
 | `scripts/` | fetch, build, run and check helpers |
-| `evidence/` | KASAN report, run logs, build comparison |
+| `evidence/` | KASAN reports, run logs, build comparison |
 
 ## Scope
 

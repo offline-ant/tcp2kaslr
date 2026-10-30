@@ -260,6 +260,12 @@ the second point, so "we do not use MPTCP" is not a defence.
 This repository stops at the use-after-free. It does not contain a KASLR leak, a
 write primitive, or a root exploit, and it does not show one end to end.
 
+One result from the private work is worth stating, because it bears on severity:
+the freed object can be reclaimed, and its bytes then come back to the peer in
+the SYNACK. We observed that twice on a kernel without KASAN. That is the
+disclosure primitive, not a KASLR break: the bytes we caused to be copied were
+bytes we had put there ourselves, and no kernel address was ever produced.
+
 We did examine the write side in the source, and it is worth knowing about for
 severity: `ip_options_build()` has no bounds checks. It copies `opt->optlen`
 bytes from the freed object into the SYNACK, and when `srr` is set it writes four
