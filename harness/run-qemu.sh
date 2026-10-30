@@ -61,8 +61,10 @@ set -e
 echo "# qemu exit=$rc (124 = timeout reached)"
 if grep -q "RESULT: KASAN_UAF_DETECTED" qemu.log; then
 	echo "# VERDICT: kernel reported the use-after-free"
+elif grep -q "SELFTEST: PASS" qemu.log; then
+	echo "# VERDICT: selftest passed (handshake completed, server accepted)"
 elif grep -q "RESULT: NO_UAF" qemu.log; then
-	echo "# VERDICT: harness finished without a KASAN report"
+	echo "# VERDICT: harness finished without a KASAN report (not proof of safety)"
 else
 	echo "# VERDICT: inconclusive (no RESULT line; see qemu.log)"
 fi
