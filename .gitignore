@@ -12,3 +12,4 @@
 /harness/init
 /harness/initramfs.cpio.gz
 /harness/*.log
+/private/
