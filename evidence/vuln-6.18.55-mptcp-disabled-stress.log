@@ -1,5 +1,5 @@
 # using KVM
-[    0.000000] Linux version 6.18.55 (claude@voidpc) (gcc (GCC) 14.2.1 20250405, GNU ld (GNU Binutils) 2.44) #2 SMP PREEMPT_DYNAMIC Fri Oct 30 16:04:01 CET 2026
+[    0.000000] Linux version 6.18.55 (builder@localhost) (gcc (GCC) 14.2.1 20250405, GNU ld (GNU Binutils) 2.44) #2 SMP PREEMPT_DYNAMIC Fri Oct 30 16:04:01 CET 2026
 [    0.000000] Command line: console=ttyS0 nokaslr panic=-1 
 [    0.000000] BIOS-provided physical RAM map:
 [    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable

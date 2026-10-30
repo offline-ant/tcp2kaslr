@@ -4,7 +4,7 @@
 
 This does **not** establish reliable remote code execution against every ordinary TCP service. It establishes a shared vulnerable lifetime/ownership path; actual exploitation additionally depends on packet reachability, concurrency, child-socket destruction timing, and memory reuse.
 
-All paths below are relative to `/home/devops/look/kernel-src/linux-6.18.55/`. Source was not modified.
+All paths below are relative to the 6.18.55 source tree (`linux/`). Source was not modified.
 
 ### Ordinary TCP path
 

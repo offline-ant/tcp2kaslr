@@ -1,99 +1,117 @@
-# CVE-2026-98432: it is not an MPTCP bug
+# CVE-2026-98432: a normal TCP server is vulnerable. MPTCP is not the trigger.
 
-A small proof of concept. It shows that a normal IPv4 TCP server reaches the bug.
-MPTCP is not needed. Many people said MPTCP is the trigger. That is wrong.
+This repo shows one thing. A plain IPv4 TCP server reaches the
+use-after-free in CVE-2026-98432. You do not need MPTCP. Many reports said MPTCP
+was the trigger. That is wrong.
 
-## What this PoC is
+We did not take this from a CVSS score or a blog post. We built the kernel from
+the release tarball and made the bug happen.
 
-It is a **bug trigger, not an exploit**. It answers one question:
-
-> Can a plain `IPPROTO_TCP` IPv4 listener reach the use-after-free, with no MPTCP?
-
-KASAN is the judge. When the kernel reads freed memory, KASAN prints a report and
-the harness stops.
-
-Not in scope, and not attempted: KASLR leak, heap shaping, control-flow hijack,
-running a command. So this proves the bug is real and reachable on stock TCP. It
-says nothing about how easy the full exploit is.
-
-## Result
+## The short answer
 
 | Kernel | MPTCP | Attempts | Time | Result |
-|---|---|---|---|---|
+|---|---|---:|---:|---|
 | 6.18.55, no fix | not used | 134,955 | 34 s | **KASAN use-after-free** |
 | 6.18.55, no fix | switched off | 191,431 | 80 s | **KASAN use-after-free** |
 | 6.18.55 + fix | not used | 439,316 | 411 s | clean |
 
-In no run did the guest create an MPTCP socket. The listener is a plain
-`IPPROTO_TCP` socket.
+The listener in every run is a normal `IPPROTO_TCP` socket. No MPTCP socket is
+ever created. In the second run MPTCP is also switched off in the kernel.
 
-**The race is hard to win.** It fired twice. Later runs of several hundred
-thousand attempts found nothing. That is expected, not a defect. A run of a few
-minutes is roughly a coin flip. See `ANALYSIS.md` for the numbers.
+The race is hard to win. See `ANALYSIS.md` for the real numbers and for the
+limits of our measurement.
 
-## What the bug is
+## What the bug is, in plain words
 
-A TCP server gets a SYN. The SYN has an IPv4 option (Record Route or Timestamp).
-The kernel saves the option in the request socket.
+A TCP server gets a SYN. The SYN carries an IPv4 option (Record Route or
+Timestamp). The kernel saves those options in the request socket.
 
-A second SYN for the same connection arrives. The kernel builds a SYNACK. It
-reads the saved option.
+Then a second SYN for the same connection arrives. The kernel builds a SYNACK
+and reads the saved options.
 
-At the same time the handshake finishes. The child socket gets the same option
-pointer, not a copy. The server closes the child. The memory is freed with plain
-`kfree()`.
+At the same time the handshake finishes. The child socket gets **the same
+pointer**, not a copy. The server closes the child. The kernel frees the options
+with plain `kfree()`.
 
-The SYNACK code still reads that memory. That is the use-after-free.
+The SYNACK code is still reading that memory. That is the use-after-free.
 
-## Reproduce
+## What this PoC is and is not
+
+It is a **bug trigger**. It shows the kernel reads freed memory. KASAN is the
+judge. It is not an exploit. It does not leak addresses, does not write memory
+and does not get root.
+
+The repo stops there on purpose. Later stages were worked on privately and are
+not published here.
+
+## Reproduce it
 
 ```sh
-scripts/get-kernel.sh              # linux/ (tarball, verified by sha256)
+scripts/get-kernel.sh              # fetch 6.18.55, sha256 checked, into linux/
 scripts/build-kernel.sh vuln       # KASAN kernel, no fix
-scripts/build-kernel.sh patched    # KASAN kernel, with fix
-scripts/build-harness.sh           # harness/init + initramfs
-scripts/run.sh vuln 300            # expect KASAN
-scripts/run.sh patched 300         # expect nothing
+scripts/build-kernel.sh patched    # KASAN kernel, with the fix
+scripts/build-harness.sh           # builds harness/init + initramfs
+scripts/run.sh vuln 90 selftest    # checks the wiring only
+scripts/run.sh vuln 600            # expect a KASAN report
+scripts/run.sh patched 600         # expect nothing
 ```
 
-`scripts/run.sh vuln 90 selftest` only checks the wiring. Run that first.
+You need gcc, make, bison, flex, bc and `qemu-system-x86_64`. KVM helps a lot.
+The VM uses 2 GB RAM and 8 vCPUs; the host needs about 16 cores to keep the
+timing realistic.
 
-Needs: gcc, make, bison, flex, bc, qemu-system-x86_64, KVM if you have it, and
-about 2 GB RAM for the VM. `SMP=8` is the tested setting. Do not lower it.
-
-Because the race is rare, run it more than once. Each boot is a fresh try.
+**Because the race is rare, one run may show nothing.** That is not evidence that
+the kernel is safe. Run it several times, and read the caveats in `ANALYSIS.md`
+before you quote any rate.
 
 ## Check your own kernel
 
-Do not trust the version number. Look at the code in the binary.
+Do not trust the version string. Look at the code in the binary.
 
 ```sh
 scripts/check-free-sites.py
 ```
 
-It reads the two free sites from the running kernel and shows which function
-they call: `kfree` (bad) or `kvfree_call_rcu` (good).
+It finds the two free sites in the running kernel and shows which function they
+call: `kfree` (bad) or `kvfree_call_rcu` (fixed).
 
-On this machine (6.18.59_1) both sites use `kvfree_call_rcu`. It is fixed.
+On the machine this was written on (6.18.59_1) both sites use
+`kvfree_call_rcu`, so that kernel is fixed.
 
 ## Who is exposed
 
-- inbound IPv4 TCP on a listening socket, and
-- the peer sends SYN with IP options, and
-- the program closes the accepted socket soon.
+A host is exposed if all three are true:
 
-That is most internet servers. An attacker can add the IP option, so
-"we do not use MPTCP" is not a defence.
+1. it listens on IPv4 TCP, and
+2. the peer sends a SYN with IP options, and
+3. the program closes the accepted socket soon.
 
-`accept_source_route=0` does not help. That sysctl is about source routing only.
-To block the bug you must drop SYNs that carry any IP option. Patching is better.
+The attacker controls point 2. So most internet servers are exposed. Saying "we
+do not use MPTCP" does not help.
+
+Two notes:
+
+- `accept_source_route=0` does **not** protect you. It only blocks source
+  routing, not Record Route or Timestamp.
+- If you cannot patch yet, drop inbound SYNs that carry IP options. Then the
+  kernel never saves options for the request socket. Patching is better.
 
 ## Files
 
 | Path | What |
 |---|---|
-| `ANALYSIS.md` | source path, design choices, hit statistics, KASAN report |
-| `harness/trigger.c` | the PoC (static `/init`, runs in QEMU) |
+| `ANALYSIS.md` | the full report: source path, method, results, limits |
+| `harness/` | the bug trigger that runs as `/init` in QEMU |
 | `patches/` | the upstream fix, used for the control build |
-| `evidence/` | run logs, KASAN report, byte-identical build check |
-| `scripts/` | get, build, run, and check helpers |
+| `scripts/` | fetch, build, run and check helpers |
+| `evidence/` | KASAN report, run logs, build comparison |
+
+## Scope
+
+Test kernels only, and only ones you own. Nothing here should be pointed at
+systems you do not control.
+
+## Licence
+
+MIT for our code and text. `patches/` contains a Linux kernel commit and stays
+under GPL-2.0. See `LICENSE`.
