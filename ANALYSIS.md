@@ -158,7 +158,9 @@ Honest answer: it is rare, and it comes in bursts.
   race, not the race itself. In unpublished work we watched the freed object get
   reused and its bytes come back in a SYNACK. We saw this twice, and both events
   fell inside the **same five-second window**, after 3.29M clean attempts.
-- Later runs of 4-13M attempts produced nothing.
+- Adding every run on a normal kernel together: **about 48.3M attempts, two
+  events, both in that one window.** That is 4e-8 per attempt, which is a bound,
+  not a rate.
 
 So the process is not steady. It clusters. Any single number is a poor summary,
 and a short run proves nothing either way.

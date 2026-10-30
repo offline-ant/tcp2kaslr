@@ -24,8 +24,18 @@ reaches it, and the upstream fix stops it.
 | 6.18.55, no fix | switched off | 191,431 | 80 s | **KASAN use-after-free** |
 | 6.18.55 + fix | not used | 439,316 | 411 s | clean |
 
-The race is hard to win. Read `ANALYSIS.md` before quoting any rate: our numbers
-are a best case, and the events come in bursts.
+## How hard is it to hit?
+
+Very hard. With KASAN the reader is slow, so the bug shows up within a few
+hundred thousand attempts. On a normal kernel it is far rarer: across about
+**48 million attempts we saw two events, both inside the same five seconds**.
+
+That is too few to state a rate. The most we will claim is a bound of roughly
+`1e-7` per attempt, and even that is a best case, because our harness forces the
+two packets onto two CPUs and a real NIC usually sends one flow to one CPU.
+
+So a clean run does **not** mean a safe kernel. Read `ANALYSIS.md` sections 5.2
+and 6 before quoting any number.
 
 ## The bug in plain words
 
