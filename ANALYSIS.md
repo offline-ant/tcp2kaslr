@@ -15,7 +15,13 @@ The KASAN report matches the patch text exactly. A freed `struct ip_options_rcu`
 the pointer is destroyed by the application calling `close()`.
 
 What we proved: the use-after-free is real and a remote peer can trigger it.
-What we did not do: turn it into root or RCE.
+This repository stops at the use-after-free. Turning it into disclosure, a
+controlled write, or root is out of scope here and is not done in this repo.
+
+Note on the rates below: they also depend on how fast the victim application
+accepts and closes the child, not just on the kernel. A server that does real
+work between accept() and close() is much harder to hit than the test server
+here, which closes instantly. Treat every number below as a best-case bound.
 
 ## Source path
 
