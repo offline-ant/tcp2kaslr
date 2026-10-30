@@ -1,0 +1,14 @@
+# kernel source (submodule or tarball), never committed
+/linux/
+/linux-6.18.55/
+/linux-*.tar.xz
+
+# build output
+/out/
+/vmlinuz-*
+/vmlinux-*
+
+# harness build products and run logs
+/harness/init
+/harness/initramfs.cpio.gz
+/harness/*.log

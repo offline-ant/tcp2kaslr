@@ -1,0 +1,95 @@
+[   34.137837] BUG: KASAN: slab-use-after-free in inet_csk_route_req+0x9f9/0xa80
+[   34.149474] Read of size 1 at addr ffff888007d70f9c by task init/118
+[   34.164436] 
+[   34.166235] CPU: 1 UID: 0 PID: 118 Comm: init Not tainted 6.18.55 #2 PREEMPT(voluntary) 
+[   34.166251] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014
+[   34.166262]  <TASK>
+[   34.166280]  ? inet_csk_route_req+0x9f9/0xa80
+[   34.166292]  print_report+0x174/0x4f6
+[   34.166302]  ? __pfx__raw_spin_lock_irqsave+0x10/0x10
+[   34.166311]  ? xfrm_lookup_route+0x1e/0x160
+[   34.166322]  ? inet_csk_route_req+0x9f9/0xa80
+[   34.166340]  ? inet_csk_route_req+0x9f9/0xa80
+[   34.166349]  inet_csk_route_req+0x9f9/0xa80
+[   34.166359]  tcp_v4_send_synack+0x525/0x700
+[   34.166368]  ? __pfx_tcp_v4_send_synack+0x10/0x10
+[   34.166375]  ? __pfx_get_random_u32+0x10/0x10
+[   34.166385]  ? selinux_socket_sock_rcv_skb+0x247/0x610
+[   34.166395]  tcp_rtx_synack+0x117/0x490
+[   34.166405]  ? arch_stack_walk+0x73/0xf0
+[   34.166413]  ? __pfx_tcp_rtx_synack+0x10/0x10
+[   34.166422]  ? arch_stack_walk+0xa6/0xf0
+[   34.166429]  tcp_check_req+0xcec/0x1f10
+[   34.166437]  ? security_sock_rcv_skb+0x1e/0x40
+[   34.166446]  ? sk_filter_trim_cap+0x42a/0xb00
+[   34.166455]  ? __pfx_tcp_check_req+0x10/0x10
+[   34.166462]  ? xdp_do_redirect_frame+0x680/0x700
+[   34.166469]  ? __asan_memcpy+0x3c/0x60
+[   34.166477]  tcp_v4_rcv+0xdd9/0x3ee0
+[   34.166486]  ? raw_local_deliver+0x346/0xa80
+[   34.166495]  ? __pfx_tcp_v4_rcv+0x10/0x10
+[   34.166502]  ? __skb_flow_dissect+0x2a8/0x6690
+[   34.166512]  ? __pfx_raw_local_deliver+0x10/0x10
+[   34.166520]  ? __ip_options_compile+0x10e1/0x1bc0
+[   34.166540]  ip_local_deliver_finish+0x332/0x4b0
+[   34.166549]  ip_local_deliver+0x18d/0x2d0
+[   34.166576]  ip_rcv+0x220/0x270
+[   34.166584]  ? __pfx_ip_rcv+0x10/0x10
+[   34.166609]  ? _raw_spin_lock_irq+0x80/0xe0
+[   34.166626]  __netif_receive_skb_one_core+0x161/0x1b0
+[   34.166635]  ? __pfx___netif_receive_skb_one_core+0x10/0x10
+[   34.166645]  netif_receive_skb+0x82/0x380
+[   34.166661]  ? __pfx___virtio_net_hdr_to_skb+0x10/0x10
+[   34.166688]  ? __pfx_call_function_single_prep_ipi+0x10/0x10
+[   34.166700]  ? __pfx_tun_get_user+0x10/0x10
+[   34.166709]  ? smp_call_function_single_async+0x47/0x80
+[   34.166726]  ? __pfx_sched_balance_trigger+0x10/0x10
+[   34.166740]  ? sched_tick+0x1d3/0x520
+[   34.166748]  ? tun_chr_write_iter+0x16e/0x290
+[   34.166754]  tun_chr_write_iter+0x16e/0x290
+[   34.166771]  ? __hrtimer_run_queues+0x3bc/0x6c0
+[   34.166779]  ? __pfx_vfs_write+0x10/0x10
+[   34.166794]  ksys_write+0xf7/0x1c0
+[   34.166808]  do_syscall_64+0xa4/0x300
+[   34.166816]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+[   34.166839] RSP: 002b:00007f5a2fe221c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+[   34.166848] RAX: ffffffffffffffda RBX: 00007f5a2fe226c0 RCX: 000000000044b3ce
+[   34.166859] RBP: 00000000004c0c3c R08: 0000000000000000 R09: 0000000000000000
+[   34.166863] R10: 0000000000000000 R11: 0000000000000246 R12: 00000000004c0c40
+[   34.166874]  </TASK>
+[   34.166878] 
+[   34.822913] Allocated by task 114:
+[   34.831113]  kasan_save_stack+0x30/0x50
+[   34.834447]  kasan_save_track+0x14/0x30
+[   34.837045]  __kasan_kmalloc+0x8f/0xa0
+[   34.840506]  __kmalloc_noprof+0x199/0x5b0
+[   34.842716]  tcp_v4_route_req+0x2d0/0x420
+[   34.859205]  tcp_v4_do_rcv+0x2a8/0x8d0
+[   34.862367]  tcp_v4_rcv+0x3242/0x3ee0
+[   34.863978]  ip_protocol_deliver_rcu+0x61/0x2e0
+[   34.872192]  ip_local_deliver_finish+0x332/0x4b0
+[   34.874881]  ip_local_deliver+0x18d/0x2d0
+[   34.897336]  __netif_receive_skb_one_core+0x161/0x1b0
+[   34.946817]  tun_chr_write_iter+0x16e/0x290
+[   34.969958]  ksys_write+0xf7/0x1c0
+[   35.026508]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+[   35.030403] 
+[   35.032262] Freed by task 110:
+[   35.052079]  __kasan_save_free_info+0x3b/0x70
+[   35.063494]  kfree+0x128/0x430
+[   35.069454]  inet_sock_destruct+0x4f0/0x780
+[   35.092819]  inet_release+0xc9/0x1c0
+[   35.094221]  __sock_release+0xa1/0x250
+[   35.102438]  sock_close+0x10/0x20
+[   35.110373]  fput_close_sync+0xe0/0x190
+[   35.116400]  __x64_sys_close+0x78/0xd0
+[   35.118760]  do_syscall_64+0xa4/0x300
+[   35.123430]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+[   35.128597] 
+[   35.134328] The buggy address belongs to the object at ffff888007d70f80
+[   35.134328]  which belongs to the cache kmalloc-64 of size 64
+[   35.144978] The buggy address is located 28 bytes inside of
+[   35.144978]  freed 64-byte region [ffff888007d70f80, ffff888007d70fc0)
+[   35.159097] 
+[   35.159707] The buggy address belongs to the physical page:
+[   35.167917] page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x7d70

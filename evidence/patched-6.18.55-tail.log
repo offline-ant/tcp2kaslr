@@ -1,0 +1,18 @@
+ATTEMPTS: 385865 accepts=385449 elapsed=341s
+ATTEMPTS: 390386 accepts=389789 elapsed=346s
+ATTEMPTS: 392583 accepts=392167 elapsed=351s
+ATTEMPTS: 397991 accepts=397575 elapsed=356s
+ATTEMPTS: 399400 accepts=398982 elapsed=361s
+ATTEMPTS: 404592 accepts=404173 elapsed=366s
+ATTEMPTS: 406498 accepts=406052 elapsed=371s
+ATTEMPTS: 410683 accepts=410263 elapsed=376s
+ATTEMPTS: 415926 accepts=415507 elapsed=381s
+ATTEMPTS: 418218 accepts=417793 elapsed=386s
+ATTEMPTS: 422631 accepts=422207 elapsed=391s
+ATTEMPTS: 427275 accepts=426671 elapsed=396s
+ATTEMPTS: 430312 accepts=429890 elapsed=401s
+ATTEMPTS: 434777 accepts=434354 elapsed=406s
+ATTEMPTS: 439316 accepts=438888 elapsed=411s
+qemu-system-x86_64: terminating on signal 15 from pid 32176 (timeout)
+# qemu exit=124 (124 = timeout reached)
+# VERDICT: inconclusive (no RESULT line; see qemu.log)
