@@ -1,6 +1,6 @@
 # CVE-2026-98432
 
-_Written by DeepSeek. Analysis, experiments and this report by Claude._
+_Written by DeepSeek._
 
 **A plain IPv4 TCP server is vulnerable. MPTCP is not the trigger.**
 
