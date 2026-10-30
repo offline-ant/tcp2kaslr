@@ -8,14 +8,14 @@ vendor advisory, or a blog post.
 The bug is reachable on a normal IPv4 TCP listener. MPTCP is not required.
 
 We reproduced it with KASAN on Linux 6.18.55, built from the pristine stable
-tarball. The same kernel with the upstream fix is clean.
+tarball. The same kernel with the upstream fix did not produce a report.
 
 The KASAN report matches the patch text exactly. A freed `struct ip_options_rcu`
 (kmalloc-64) is read by `inet_csk_route_req()`. The child socket that inherited
 the pointer is destroyed by the application calling `close()`.
 
 What we proved: the use-after-free is real and a remote peer can trigger it.
-We did not try to turn it into root or RCE.
+What we did not do: turn it into root or RCE.
 
 ## Source path
 
@@ -46,6 +46,9 @@ No MPTCP. No IPv6. No unusual option type.
 - The KASAN report is read from `/dev/kmsg`. A lost race does not crash the
   machine, so the loop just retries.
 
+Nothing else is added. There is no heap shaping, no extra protocol, no special
+socket option. The PoC stays close to a normal client and a normal server.
+
 ### Three traps we hit
 
 These cost most of the time. Write them down.
@@ -66,16 +69,54 @@ These cost most of the time. Write them down.
    the other threads' SYNACKs. Throughput drops to about 0.5 attempts/s.
    Give each race pair its own tun device.
 
-## Runs
+### One trap in the run, not the code
+
+After a few minutes at a few thousand SYN/s the kernel logs
+`Possible SYN flooding ... Sending cookies`. Cookie requests never allocate
+`ireq_opt`, so the vulnerable path disappears and the run stops being useful.
+The harness now raises `somaxconn` and `tcp_max_syn_backlog` at startup, which is
+what a real server runs with, so the run stays on the vulnerable path.
+
+## How often it fires
+
+This is the honest part.
 
 | Kernel | MPTCP | Attempts | Time | Result |
 |---|---|---|---|---|
 | 6.18.55, no fix | on, unused | 134,955 | 34 s | KASAN slab-use-after-free |
 | 6.18.55, no fix | `net.mptcp.enabled=0` | 191,431 | 80 s | KASAN slab-use-after-free |
 | 6.18.55 + fix | on, unused | 439,316 | 411 s | clean |
+| 6.18.55, no fix | on, unused | 413,369 | 300 s | no report |
+| 6.18.55, no fix | on, unused | 728,627 | 600 s | no report |
 
-"Attempts" means: SYNACK received, then ACK and duplicate SYN sent. The accept
-count in the logs is the number of children created and closed.
+Both successes came early, inside the first 200k attempts. Later runs of similar
+size found nothing. The per-attempt chance is therefore very small, on the order
+of one in a million, and a single run is close to a coin flip.
+
+Why it is so rare: the reader has only a short window between loading the pointer
+and using it. The free needs the handshake to finish, the accept queue to be
+served, and `close()` to run, all inside that window. The kernel is
+`PREEMPT(voluntary)`, so the reader cannot be preempted in the window by guest
+scheduling. Only the hypervisor can park that vCPU, which is why the result moves
+around between hosts and boots.
+
+This does not weaken the finding. A rare race that a remote peer can retry
+forever is still a real bug. It does mean the PoC is not a reliable alarm: if it
+prints nothing, that is not evidence of safety.
+
+## The two builds are the same code
+
+To rule out "the rebuild behaves differently", we compared the binary that fired
+against a fresh build from the tarball:
+
+- 40 differing bytes in the whole 96 MB image.
+- All of them outside `.text`.
+- Every function on the path is byte-identical: `inet_sock_destruct`,
+  `tcp_v4_reqsk_destructor`, `tcp_v4_syn_recv_sock`, `tcp_v4_send_synack`,
+  `tcp_rtx_synack`, `ip_options_build`.
+
+So the difference between a run that fires and one that does not is scheduling,
+not code. See `evidence/build-comparison.txt`.
 
 ## KASAN report
 
@@ -154,6 +195,6 @@ Red Hat, Oracle and SUSE score 8.1. The kernel CVE team says 9.8. Ubuntu says
 priority High and has no fixed package. The difference is attack complexity:
 Red Hat says the race is hard to win.
 
-Our result does not settle that argument. It shows the race is winnable in a
-VM with 8 vCPUs in under a minute, without any special setup. That says the race
-is not as hard as the 5.9 score implies, but it is not a measured field result.
+Our result agrees that the race is hard. It is not 9.8 in practice. But it is
+also not unreachable, and the precondition is only "an exposed IPv4 TCP port".
+The 5.9 rating is about difficulty, not about who is exposed.

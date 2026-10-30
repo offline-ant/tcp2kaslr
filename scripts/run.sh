@@ -22,4 +22,11 @@ esac
 	exit 2
 }
 
+# run-qemu.sh cd's into harness/, so the kernel path must be absolute
+KERNEL=$(realpath "$KERNEL")
+[ -f "$KERNEL" ] || {
+	echo "no kernel at $KERNEL; run scripts/build-kernel.sh $VARIANT" >&2
+	exit 2
+}
+
 SMP=${SMP:-8} exec harness/run-qemu.sh "$KERNEL" "$SECS" "$@"

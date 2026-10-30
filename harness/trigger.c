@@ -849,6 +849,30 @@ static void mount_setup(void)
 		tun_setup((int)ti);
 
 	/*
+	 * Bigger queues, so the kernel does not switch to SYN cookies halfway
+	 * through a run. Cookie requests never allocate ireq_opt, so the
+	 * vulnerable path vanishes. Real servers run with large queues too.
+	 */
+	{
+		static const char *const knobs[][2] = {
+			{ "/proc/sys/net/core/somaxconn", "65535" },
+			{ "/proc/sys/net/ipv4/tcp_max_syn_backlog", "65535" },
+		};
+
+		for (unsigned int ki = 0; ki < 2; ki++) {
+			int kfd = open(knobs[ki][0], O_WRONLY);
+
+			if (kfd < 0)
+				continue;
+			if (write(kfd, knobs[ki][1],
+				  strlen(knobs[ki][1])) > 0)
+				printf("sysctl: %s=%s\n", knobs[ki][0],
+				       knobs[ki][1]);
+			close(kfd);
+		}
+	}
+
+	/*
 	 * Disable MPTCP globally, if the kernel has it. The harness never opens an
 	 * MPTCP socket (it uses plain IPPROTO_TCP listeners), so this only makes
 	 * the "this is not an MPTCP bug" claim explicit and checkable.

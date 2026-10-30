@@ -46,13 +46,13 @@ fi
 # KASAN is the detector. TUN is needed by the harness. MPTCP stays on to show
 # that it is not used.
 make -C "$SRC" defconfig >/dev/null
-scripts/config --file "$SRC/.config" \
+"$SRC/scripts/config" --file "$SRC/.config" \
 	--enable KASAN --enable KASAN_GENERIC --enable KASAN_INLINE \
 	--enable KALLSYMS_ALL --enable MPTCP --enable TUN
 make -C "$SRC" olddefconfig >/dev/null
 
 for k in KASAN KASAN_GENERIC MPTCP TUN SMP; do
-	printf '%-14s %s\n' "$k" "$(rg -N "^CONFIG_$k=" "$SRC/.config" || echo '(unset!)')"
+	printf '%-14s %s\n' "$k" "$(grep -m1 "^CONFIG_$k=" "$SRC/.config" || echo '(unset!)')"
 done
 
 make -C "$SRC" -j"$JOBS" >"out/build-$VARIANT.log" 2>&1

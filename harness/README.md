@@ -14,6 +14,9 @@ as PID 1 in QEMU. No shell, no busybox, no disk.
   SYN land on two CPUs at once. One thread alone cannot do this (see below).
 - **kmsg watcher**: reads `/dev/kmsg`. On a KASAN report it prints
   `RESULT: KASAN_UAF_DETECTED` and powers off.
+- **setup**: raises `somaxconn` and `tcp_max_syn_backlog`, so the kernel does not
+  fall back to SYN cookies mid-run (cookie requests have no `ireq_opt`), and
+  switches MPTCP off to make the point explicit.
 
 ## Why tun devices
 
@@ -26,6 +29,12 @@ as PID 1 in QEMU. No shell, no busybox, no disk.
   answer the SYNACK with an RST and kill the request socket.
 - One tun device per pair, because `dup()` of one fd shares one queue. All
   sniffers would fight over the same packets.
+
+## Chance of firing
+
+The race is rare. Two runs fired, inside the first 200k attempts. Later runs of
+several hundred thousand attempts printed nothing. Expect roughly one hit per
+few million attempts, so run it several times. A silent run proves nothing.
 
 ## Build and run
 

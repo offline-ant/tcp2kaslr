@@ -1,0 +1,16 @@
+# Build comparison: the kernel that fired vs a rebuild from the tarball
+
+# vmlinuz-6.18.55-vuln-tun  = the binary that produced the KASAN report
+# out/vmlinuz-vuln         = rebuilt from scratch via scripts/ (tarball + defconfig)
+
+total differing bytes in the whole 96 MB image: 40
+all differing bytes are outside .text (file offsets 0x200000-0x35fb3b8);
+they are the version banner, build timestamp and a few data words.
+
+symbol                     section      bytes  result
+inet_sock_destruct         .text         1920  IDENTICAL
+tcp_v4_reqsk_destructor    .text           64  IDENTICAL
+tcp_v4_syn_recv_sock       .text         3600  IDENTICAL
+tcp_v4_send_synack         .text         1792  IDENTICAL
+tcp_rtx_synack             .text         1168  IDENTICAL
+ip_options_build           .text         1232  IDENTICAL
